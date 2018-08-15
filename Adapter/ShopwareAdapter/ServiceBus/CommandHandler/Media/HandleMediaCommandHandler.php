@@ -9,6 +9,7 @@ use PlentyConnector\Connector\ServiceBus\CommandHandler\CommandHandlerInterface;
 use PlentyConnector\Connector\ServiceBus\CommandType;
 use PlentyConnector\Connector\TransferObject\Media\Media;
 use PlentyConnector\Connector\ValueObject\Identity\Identity;
+use ShopwareAdapter\DataPersister\Translation\TranslationDataPersisterInterface;
 use Shopware\Components\Api\Exception\NotFoundException as MediaNotFoundException;
 use Shopware\Components\Api\Manager;
 use Shopware\Components\Api\Resource\Media as MediaResource;
@@ -17,6 +18,7 @@ use ShopwareAdapter\DataProvider\Media\MediaDataProviderInterface;
 use ShopwareAdapter\Helper\AttributeHelper;
 use ShopwareAdapter\RequestGenerator\Media\MediaRequestGeneratorInterface;
 use ShopwareAdapter\ShopwareAdapter;
+
 
 /**
  * Class HandleMediaCommandHandler.
@@ -27,6 +29,11 @@ class HandleMediaCommandHandler implements CommandHandlerInterface
      * @var IdentityServiceInterface
      */
     private $identityService;
+
+    /**
+     * @var TranslationDataPersisterInterface
+     */
+    private $translationDataPersister;
 
     /**
      * @var MediaRequestGeneratorInterface
@@ -62,13 +69,15 @@ class HandleMediaCommandHandler implements CommandHandlerInterface
         MediaRequestGeneratorInterface $mediaRequestGenerator,
         MediaDataProviderInterface $mediaDataProvider,
         AttributeHelper $attributeHelper,
-        AttributeDataPersisterInterface $attributePersister
+        AttributeDataPersisterInterface $attributePersister,
+        TranslationDataPersisterInterface $translationDataPersister
     ) {
         $this->identityService = $identityService;
         $this->mediaRequestGenerator = $mediaRequestGenerator;
         $this->mediaDataProvider = $mediaDataProvider;
         $this->attributeHelper = $attributeHelper;
         $this->attributePersister = $attributePersister;
+        $this->translationDataPersister = $translationDataPersister;
     }
 
     /**
@@ -142,6 +151,7 @@ class HandleMediaCommandHandler implements CommandHandlerInterface
             $mediaModel,
             $media->getAttributes()
         );
+        $this->translationDataPersister->writeMediaTranslations($media);
 
         return true;
     }

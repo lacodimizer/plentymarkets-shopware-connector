@@ -4,6 +4,7 @@ namespace ShopwareAdapter\DataPersister\Translation;
 
 use PlentyConnector\Connector\IdentityService\IdentityServiceInterface;
 use PlentyConnector\Connector\TransferObject\Language\Language;
+use PlentyConnector\Connector\TransferObject\Media\Media;
 use PlentyConnector\Connector\TransferObject\Product\Product;
 use PlentyConnector\Connector\TransferObject\Product\Property\Property;
 use PlentyConnector\Connector\TransferObject\Product\Property\Value\Value;
@@ -244,6 +245,50 @@ class TranslationDataPersister implements TranslationDataPersisterInterface
             }
 
             $this->writeTranslations($type, $valueModel->getId(), $translation);
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function writeMediaTranslations(Media $media)
+    {
+        $mediaIdentity = $this->identityService->findOneBy([
+            'objectIdentifier' => $media->getIdentifier(),
+            'objectType' => Media::TYPE,
+            'adapterName' => ShopwareAdapter::NAME,
+        ]);
+
+        if (null === $mediaIdentity) {
+            return;
+        }
+
+
+
+        foreach ($this->translationHelper->getLanguageIdentifiers($media) as $languageIdentifier) {
+            /**
+             * @var Media $translatedMedia
+             */
+            $translatedMedia = $this->translationHelper->translate($languageIdentifier, $media);
+
+            $languageIdentity = $this->identityService->findOneBy([
+                'objectIdentifier' => $languageIdentifier,
+                'objectType' => Language::TYPE,
+                'adapterName' => ShopwareAdapter::NAME,
+            ]);
+
+            if (null === $languageIdentity) {
+                $this->logger->notice('language not mapped - ' . $languageIdentifier);
+
+                continue;
+            }
+
+            $translation = [
+                'languageIdentity' => $languageIdentity,
+                'description' => $translatedMedia->getAlternateName() ?: $translatedMedia->getName() ?: $translatedMedia->getFilename()
+            ];
+
+            $this->writeTranslations('articleimage', (int) $mediaIdentity->getAdapterIdentifier(), $translation);
         }
     }
 
